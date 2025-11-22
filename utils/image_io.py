@@ -4,6 +4,7 @@ utils.image_io: Robust image loading and pairing utilities
 import csv
 import logging
 from pathlib import Path
+from dataclasses import dataclass
 from typing import List, Tuple, Optional, Union
 
 import torch
@@ -111,55 +112,69 @@ def load_pairs_from_csv(manifest_path: Path) -> List[Tuple[Path, Path, str]]:
     return pairs
 
 
-def load_and_pair_images(
+@dataclass
+class LoadedImagePair:
+    """Container for paired tensors plus their source paths."""
+
+    gen_tensor: torch.Tensor
+    real_tensor: torch.Tensor
+    name: str
+    gen_path: Path
+    real_path: Path
+
+
+def pair_image_paths(
+    gen_dir: Path,
+    real_dir: Path,
+    strategy: str = "auto",
+    manifest: Optional[Path] = None
+) -> List[Tuple[Path, Path, str]]:
+    """Return matched generated/real image paths without loading pixels."""
+    if strategy == "csv":
+        if not manifest:
+            raise ValueError("Manifest file required for CSV pairing strategy")
+        return load_pairs_from_csv(manifest)
+
+    gen_files = find_image_files(gen_dir)
+    real_files = find_image_files(real_dir)
+
+    if not gen_files:
+        raise ValueError(f"No images found in generated directory: {gen_dir}")
+    if not real_files:
+        raise ValueError(f"No images found in real directory: {real_dir}")
+
+    return match_by_filename(gen_files, real_files)
+
+
+def load_and_pair_images_with_paths(
     gen_dir: Path,
     real_dir: Path,
     strategy: str = "auto",
     manifest: Optional[Path] = None,
-    warn_unpaired: bool = True,
     image_size: Tuple[int, int] = (299, 299)
-) -> List[Tuple[torch.Tensor, torch.Tensor, str]]:
-    """
-    Load and pair images from two directories.
-
-    Args:
-        gen_dir: Directory with generated images
-        real_dir: Directory with real/reference images
-        strategy: Pairing strategy ("auto" or "csv")
-        manifest: CSV file for "csv" strategy
-        warn_unpaired: Whether to warn about unpaired images
-        image_size: Target size for loaded images
-
-    Returns:
-        List of (gen_tensor, real_tensor, name) tuples
-    """
-    if strategy == "csv":
-        if not manifest:
-            raise ValueError("Manifest file required for CSV pairing strategy")
-        path_pairs = load_pairs_from_csv(manifest)
-    else:  # auto
-        gen_files = find_image_files(gen_dir)
-        real_files = find_image_files(real_dir)
-
-        if not gen_files:
-            raise ValueError(f"No images found in generated directory: {gen_dir}")
-        if not real_files:
-            raise ValueError(f"No images found in real directory: {real_dir}")
-
-        path_pairs = match_by_filename(gen_files, real_files)
+) -> List[LoadedImagePair]:
+    """Load paired images and keep track of their originating file paths."""
+    path_pairs = pair_image_paths(gen_dir, real_dir, strategy=strategy, manifest=manifest)
 
     if not path_pairs:
         return []
 
-    # Load images as tensors
-    tensor_pairs = []
+    tensor_pairs: List[LoadedImagePair] = []
     failed_loads = 0
 
     for gen_path, real_path, name in path_pairs:
         try:
             gen_tensor = load_image(gen_path, image_size)
             real_tensor = load_image(real_path, image_size)
-            tensor_pairs.append((gen_tensor, real_tensor, name))
+            tensor_pairs.append(
+                LoadedImagePair(
+                    gen_tensor=gen_tensor,
+                    real_tensor=real_tensor,
+                    name=name,
+                    gen_path=gen_path,
+                    real_path=real_path,
+                )
+            )
         except Exception as e:
             logging.error(f"Failed to load pair {name}: {e}")
             failed_loads += 1
@@ -169,3 +184,25 @@ def load_and_pair_images(
 
     logging.info(f"Successfully loaded {len(tensor_pairs)} image pairs")
     return tensor_pairs
+
+
+def load_and_pair_images(
+    gen_dir: Path,
+    real_dir: Path,
+    strategy: str = "auto",
+    manifest: Optional[Path] = None,
+    warn_unpaired: bool = True,
+    image_size: Tuple[int, int] = (299, 299)
+) -> List[Tuple[torch.Tensor, torch.Tensor, str]]:
+    """
+    Backwards-compatible wrapper that returns tensors without path metadata.
+    """
+    _ = warn_unpaired  # retained for API compatibility
+    pairs_with_paths = load_and_pair_images_with_paths(
+        gen_dir,
+        real_dir,
+        strategy=strategy,
+        manifest=manifest,
+        image_size=image_size,
+    )
+    return [(p.gen_tensor, p.real_tensor, p.name) for p in pairs_with_paths]
