@@ -154,28 +154,33 @@ python evaluate_generation.py \
 
 ### Fréchet Inception Distance (FID)
 - **Range**: [0, ∞) (lower is better)
-- **Description**: Measures similarity between feature representations of generated and real images
-- **Use case**: Overall image quality and realism assessment
+- **What it measures**: Distance between Gaussian fits of Inception-v3 feature embeddings for real vs. generated samples.
+- **Best when**: You need a holistic realism signal that correlates with human judgment across varied datasets; ideal for tracking progress while training or comparing different model checkpoints.
 
 ### Structural Similarity Index (SSIM)
 - **Range**: [-1, 1] (higher is better)
-- **Description**: Compares structural information between images
-- **Use case**: Pixel-level similarity assessment
+- **What it measures**: Luminance, contrast, and structural agreement in a sliding window.
+- **Best when**: Evaluating deterministic translations or reconstructions where per-pixel fidelity matters (e.g., super-resolution or dehazing benchmarks).
 
 ### Learned Perceptual Image Patch Similarity (LPIPS)
 - **Range**: [0, ∞) (lower is better)
-- **Description**: Perceptual similarity using deep features
-- **Use case**: Human-perception-aligned similarity measurement
+- **What it measures**: Perceptual distance in deep feature space using networks such as AlexNet/VGG.
+- **Best when**: Visual quality and perceptual alignment matter more than exact pixel match; useful for artistic or style-transfer tasks.
 
 ### Peak Signal-to-Noise Ratio (PSNR)
 - **Range**: [0, ∞) (higher is better)
-- **Description**: Ratio between signal power and noise power
-- **Use case**: Pixel-level reconstruction quality
+- **What it measures**: Logarithmic ratio between maximum signal power and reconstruction error (MSE).
+- **Best when**: Quantifying low-level fidelity or compression artifacts; pairs naturally with SSIM for deterministic tasks.
 
 ### Inception Score (IS)
 - **Range**: [1, ∞) (higher is better)
-- **Description**: Measures quality and diversity of generated images
-- **Use case**: Generation quality assessment (generated images only)
+- **What it measures**: Confidence and diversity of class predictions from an Inception network on generated images only.
+- **Best when**: You lack paired real images but still want a quick read on sample quality/diversity (e.g., unconditional GANs). Less reliable for domain-shifted data.
+
+### Semantic Consistency (SegFormer)
+- **Range**: 0–100 % for pixel accuracy, mIoU, and frequency-weighted IoU (higher is better)
+- **What it measures**: Agreement between SegFormer segmentation masks for real vs. generated images, aggregated per class.
+- **Best when**: Auditing whether content integrity survives style / weather / domain shifts (e.g., roads stay roads, pedestrians stay pedestrians). Enables fine-grained analysis of which classes degrade.
 
 ## Output Format
 
