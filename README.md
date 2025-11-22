@@ -86,7 +86,6 @@ python evaluate_generation.py \
   --real ./real_fog \
   --metrics fid lpips \
   --semantic-consistency \
-  --semantic-model segformer-b3 \
   --output clear2fog_semantic.json \
   --device cuda
 ```
