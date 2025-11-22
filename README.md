@@ -1,10 +1,11 @@
-# Image Evaluation Pipeline
+# PRISM: Pipeline for Robust Image Similarity Metrics
 
-A comprehensive Python evaluation pipeline for comparing generated images against real images to assess the quality and realism of image-to-image translation or weather synthesis models.
+PRISM (Pipeline for Robust Image Similarity Metrics) is a comprehensive Python evaluation pipeline for comparing generated images against real images to assess the quality and realism of image-to-image translation or weather synthesis models.
 
 ## Features
 
 - **Multiple Image Quality Metrics**: FID, SSIM, LPIPS, PSNR, Inception Score
+- **Semantic Consistency Analysis**: Optional SegFormer-based evaluation for class-level agreement
 - **Flexible Input Handling**: Support for different image formats and automatic pairing
 - **Modular Architecture**: Easy addition of new metrics through plugin-style design
 - **Batch Processing**: Efficient handling of large image datasets with progress tracking
@@ -54,6 +55,15 @@ python evaluate_generation.py \
   --real ./path/to/reference_images \
   --metrics fid ssim lpips psnr \
   --output results.json
+
+# Include semantic consistency
+python evaluate_generation.py \
+  --generated ./path/to/generated_images \
+  --real ./path/to/reference_images \
+  --metrics fid psnr \
+  --semantic-consistency \
+  --semantic-model segformer-b3 \
+  --output results_with_semantic.json
 ```
 
 ### Weather Image Translation Example
@@ -87,6 +97,9 @@ python evaluate_generation.py \
 | `--output` | Output file path | `results.json` |
 | `--config` | Configuration file (YAML/JSON) | None |
 | `--verbose` | Verbosity level (`-v`, `-vv`) | `0` |
+| `--semantic-consistency` | Enable SegFormer-based semantic metrics | `False` |
+| `--semantic-model` | SegFormer backbone variant (`segformer-b0` … `segformer-b5`) | `segformer-b5` |
+| `--semantic-device` | Device for semantic evaluator (`cpu`, `cuda`, `auto`) | `auto` |
 
 ### Configuration Files
 
@@ -367,11 +380,11 @@ This project is provided as-is for research and educational purposes.
 
 ## Citation
 
-If you use this evaluation pipeline in your research, please cite:
+If you use PRISM in your research, please cite:
 
 ```bibtex
-@software{image_evaluation_pipeline,
-  title={Comprehensive Image Evaluation Pipeline},
+@software{prism_image_metrics,
+  title={PRISM: Pipeline for Robust Image Similarity Metrics},
   author={Christoph Gerhardt},
   year={2025},
   url={https://github.com/your-repo/image-evaluation-pipeline}
