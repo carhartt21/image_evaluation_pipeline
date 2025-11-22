@@ -79,6 +79,16 @@ python evaluate_generation.py \
   --batch-size 64 \
   --output weather_results.json \
   -v
+
+# Weather translation with semantic focus
+python evaluate_generation.py \
+  --generated ./generated_clear2fog \
+  --real ./real_fog \
+  --metrics fid lpips \
+  --semantic-consistency \
+  --semantic-model segformer-b3 \
+  --output clear2fog_semantic.json \
+  --device cuda
 ```
 
 ## Usage Guide
