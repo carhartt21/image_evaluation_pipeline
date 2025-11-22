@@ -8,7 +8,13 @@ import torch
 from PIL import Image
 import numpy as np
 
-from utils.image_io import load_and_pair_images, find_image_files, match_by_filename
+from utils.image_io import (
+    load_and_pair_images,
+    load_and_pair_images_with_paths,
+    find_image_files,
+    match_by_filename,
+    LoadedImagePair,
+)
 from semantic_consistency import get_image_pairs
 
 
@@ -114,6 +120,23 @@ class TestImagePairing:
         gen_tensor, real_tensor, _ = pairs[0]
         assert gen_tensor.shape == (3, 128, 128)
         assert real_tensor.shape == (3, 128, 128)
+
+    def test_load_and_pair_images_with_paths(self, tmp_path):
+        """Ensure helper keeps track of source file paths."""
+        gen_dir = tmp_path / "gen"
+        real_dir = tmp_path / "real"
+        gen_dir.mkdir()
+        real_dir.mkdir()
+
+        create_dummy_image(gen_dir / "alpha.png")
+        create_dummy_image(real_dir / "alpha.jpg")
+
+        result = load_and_pair_images_with_paths(gen_dir, real_dir)
+        assert len(result) == 1
+        pair: LoadedImagePair = result[0]
+        assert pair.gen_path.name == "alpha.png"
+        assert pair.real_path.name == "alpha.jpg"
+        assert pair.name == "alpha"
 
     def test_get_image_pairs_with_suffix_stripping(self, tmp_path):
         """Ensure suffix stripping allows pairing mismatched filenames."""
